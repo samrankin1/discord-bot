@@ -1,0 +1,1 @@
+<add Discord user IDs of users that you want to designate as admins here, one per line>
