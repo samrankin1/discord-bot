@@ -1,6 +1,7 @@
 import discord
-import asyncio
 import re
+
+from handlers import Handlers
 
 CLIENT_TOKEN_FILE = "./client_token.txt"
 ADMINS_FILE = "./admins.txt"
@@ -9,24 +10,18 @@ IMGUR_GIF_REGEX = re.compile("^http://i\.imgur\.com/\w+\.gif$")
 IMGUR_MP4_REGEX = re.compile("^http://i\.imgur\.com/\w+\.mp4$")
 
 client = discord.Client()
-
-admins = []
-
-def is_admin(user):
-	return (user.id in admins)
+handlers = None
 
 async def handle_server_message(message):
 	print("[SM] from @" + str(message.author) + " [" + message.author.id + "]: " + message.content)
-	
+
 	if IMGUR_GIF_REGEX.match(message.content) is not None:
 		print("[SM] found misformatted imgur gif link ('" + message.content + "'), reformatting to gifv")
-		updated_link = message.content.replace(".gif", ".gifv")
-		await client.send_message(message.channel, "automatically reformatted gif link to gifv" + "\n" + updated_link)
-		
+		await handlers.handle_imgur_gif_link(message)
+
 	if IMGUR_MP4_REGEX.match(message.content) is not None:
 		print("[SM] found misformatted imgur mp4 link ('" + message.content + "'), reformatting to gifv")
-		updated_link = message.content.replace(".mp4", ".gifv")
-		await client.send_message(message.channel, "automatically reformatted mp4 link to gifv" + "\n" + updated_link)
+		await handlers.handle_imgur_mp4_link(message)
 
 async def handle_group_message(message):
 	print("[GM] ignored group message")
@@ -36,18 +31,15 @@ async def handle_private_message(message):
 
 	if message.content.lower() == "invite":
 		print("[DM] received invite request from @" + str(message.author))
-		invite_url = discord.utils.oauth_url(client.user.id, permissions = discord.Permissions.all())
-		await client.send_message(message.channel, invite_url)
+		await handlers.handle_invite_request(message)
 		print("[DM] sent invite url to @" + str(message.author))
 
 	if message.content.lower() == "shutdown":
 		print("[DM] received shutdown request from @" + str(message.author))
-		if is_admin(message.author):
-			await client.send_message(message.channel, "shutting down...")
-			print("[DM] shutting down at request of admin @" + str(message.author))
-			await client.close()
+		success = await handlers.handle_shutdown_request(message)
+		if success:
+			print("[DM] shut down at request of admin @" + str(message.author))
 		else:
-			await client.send_message(message.channel, "only administrators can shut down the bot!")
 			print("[DM] denied shutdown request of non-admin @" + str(message.author))
 
 @client.event
@@ -72,12 +64,15 @@ def main():
 	with open(CLIENT_TOKEN_FILE, "r") as file:
 		client_token = file.readline().strip()
 
-	global admins
+	admins = []
 	with open(ADMINS_FILE, "r") as file:
 		for line in file.readlines():
 			admins.append(line.strip())
 	print("loaded " + str(len(admins)) + " administrator(s)")
 	print()
+
+	global handlers
+	handlers = Handlers(client, admins)
 
 	print("logging in...")
 	client.run(client_token)
