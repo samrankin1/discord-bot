@@ -75,7 +75,7 @@ def main():
 	global admins
 	with open(ADMINS_FILE, "r") as file:
 		for line in file.readlines():
-			admins.append(line)
+			admins.append(line.strip())
 	print("loaded " + str(len(admins)) + " administrator(s)")
 	print()
 
