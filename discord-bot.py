@@ -59,6 +59,14 @@ async def on_message(message):
 	discord.ChannelType.private: handle_private_message
 	}[message.channel.type](message)
 
+@client.event
+async def on_server_join(server):
+	print("[global] added to new server: '" + server.name + "'")
+
+@client.event
+async def on_server_remove(server):
+	print("[global] removed from server: '" + server.name + "'")
+
 def main():
 	client_token = None
 	with open(CLIENT_TOKEN_FILE, "r") as file:
