@@ -6,8 +6,8 @@ from handlers import Handlers
 CLIENT_TOKEN_FILE = "./client_token.txt"
 ADMINS_FILE = "./admins.txt"
 
-IMGUR_GIF_REGEX = re.compile("^http://i\.imgur\.com/\w+\.gif$")
-IMGUR_MP4_REGEX = re.compile("^http://i\.imgur\.com/\w+\.mp4$")
+IMGUR_GIF_REGEX = re.compile("^https?://i\.imgur\.com/\w+\.gif$")
+IMGUR_MP4_REGEX = re.compile("^https?://i\.imgur\.com/\w+\.mp4$")
 
 client = discord.Client()
 handlers = None
