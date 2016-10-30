@@ -90,4 +90,5 @@ ENV/
 
 # discord-bot config files
 client_token.txt
+youtube_token.txt
 admins.txt

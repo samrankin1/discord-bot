@@ -4,10 +4,13 @@ import re
 from handlers import Handlers
 
 CLIENT_TOKEN_FILE = "./client_token.txt"
+YOUTUBE_TOKEN_FILE = "./youtube_token.txt"
 ADMINS_FILE = "./admins.txt"
 
 IMGUR_GIF_REGEX = re.compile("^https?://i\.imgur\.com/\w+\.gif$")
 IMGUR_MP4_REGEX = re.compile("^https?://i\.imgur\.com/\w+\.mp4$")
+SPOTIFY_TRACK_URI_REGEX = re.compile("^spotify:track:\w+$")
+SPOTIFY_TRACK_URL_REGEX = re.compile("^https?://open\.spotify\.com/track/\w+$")
 
 client = discord.Client()
 handlers = None
@@ -22,6 +25,14 @@ async def handle_server_message(message):
 	if IMGUR_MP4_REGEX.match(message.content) is not None:
 		print("[SM] found misformatted imgur mp4 link ('" + message.content + "'), reformatting to gifv")
 		await handlers.handle_imgur_mp4_link(message)
+
+	if SPOTIFY_TRACK_URI_REGEX.match(message.content) is not None:
+		print("[SM] found spotify track URI ('" + message.content + "'), attempting to find youtube equivalent")
+		await handlers.handle_spotify_uri(message)
+
+	if SPOTIFY_TRACK_URL_REGEX.match(message.content) is not None:
+		print("[SM] found spotify track URL ('" + message.content + "'), attempting to find youtube equivalent")
+		await handlers.handle_spotify_url(message)
 
 async def handle_group_message(message):
 	print("[GM] ignored group message")
@@ -72,6 +83,10 @@ def main():
 	with open(CLIENT_TOKEN_FILE, "r") as file:
 		client_token = file.readline().strip()
 
+	youtube_token = None
+	with open(YOUTUBE_TOKEN_FILE, "r") as file:
+		youtube_token = file.readline().strip()
+
 	admins = []
 	with open(ADMINS_FILE, "r") as file:
 		for line in file.readlines():
@@ -80,7 +95,7 @@ def main():
 	print()
 
 	global handlers
-	handlers = Handlers(client, admins)
+	handlers = Handlers(client, admins, youtube_token)
 
 	print("logging in...")
 	client.run(client_token)
