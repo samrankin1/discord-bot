@@ -7,10 +7,10 @@ CLIENT_TOKEN_FILE = "./client_token.txt"
 YOUTUBE_TOKEN_FILE = "./youtube_token.txt"
 ADMINS_FILE = "./admins.txt"
 
-IMGUR_GIF_REGEX = re.compile("^https?://i\.imgur\.com/\w+\.gif$")
-IMGUR_MP4_REGEX = re.compile("^https?://i\.imgur\.com/\w+\.mp4$")
-SPOTIFY_TRACK_URI_REGEX = re.compile("^spotify:track:\w+$")
-SPOTIFY_TRACK_URL_REGEX = re.compile("^https?://open\.spotify\.com/track/\w+$")
+IMGUR_GIF_MP4_REGEX = re.compile("^(https?://i\.imgur\.com/\w+)\.(?:gif|mp4)$") # matches a imgur .gif or .mp4 link, capturing the URL minus the extension
+SPOTIFY_TRACK_REGEX = re.compile("^(?:spotify:track:|https?://open\.spotify\.com/track/)(\w+)$") # matches a spotify:track:xyz or http://open.spotify.com/track/xyz link, capturing the track ID
+INVITE_COMMAND_REGEX = re.compile("^invite$") # matches exactly "invite"
+SHUTDOWN_COMMAND_REGEX = re.compile("^shut ?down$") # matches exactly "shutdown" or "shut down"
 
 client = discord.Client()
 handlers = None
@@ -18,21 +18,19 @@ handlers = None
 async def handle_server_message(message):
 	print("[SM] from @" + str(message.author) + " [" + message.author.id + "]: " + message.content)
 
-	if IMGUR_GIF_REGEX.match(message.content) is not None:
-		print("[SM] found misformatted imgur gif link ('" + message.content + "'), reformatting to gifv")
-		await handlers.handle_imgur_gif_link(message)
+	imgur_match = IMGUR_GIF_MP4_REGEX.search(message.content)
+	if imgur_match:
+		print("[SM] found misformatted imgur link ('" + message.content + "'), reformatting to gifv")
+		naked_url = imgur_match.group(1)
+		print("imgur naked URL: " + naked_url) # debug
+		await handlers.handle_imgur_gif_mp4_link(naked_url, message)
 
-	if IMGUR_MP4_REGEX.match(message.content) is not None:
-		print("[SM] found misformatted imgur mp4 link ('" + message.content + "'), reformatting to gifv")
-		await handlers.handle_imgur_mp4_link(message)
-
-	if SPOTIFY_TRACK_URI_REGEX.match(message.content) is not None:
+	spotify_match = SPOTIFY_TRACK_REGEX.search(message.content)
+	if spotify_match:
 		print("[SM] found spotify track URI ('" + message.content + "'), attempting to find youtube equivalent")
-		await handlers.handle_spotify_uri(message)
-
-	if SPOTIFY_TRACK_URL_REGEX.match(message.content) is not None:
-		print("[SM] found spotify track URL ('" + message.content + "'), attempting to find youtube equivalent")
-		await handlers.handle_spotify_url(message)
+		track_id = spotify_match.group(1)
+		print("spotify track ID: " + track_id)
+		await handlers.handle_spotify_track(track_id, message)
 
 async def handle_group_message(message):
 	print("[GM] ignored group message")
@@ -40,12 +38,12 @@ async def handle_group_message(message):
 async def handle_private_message(message):
 	print("[DM] from @" + str(message.author) + " [" + message.author.id + "]: " + message.content)
 
-	if message.content.lower() == "invite":
+	if INVITE_COMMAND_REGEX.search(message.content):
 		print("[DM] received invite request from @" + str(message.author))
 		await handlers.handle_invite_request(message)
 		print("[DM] sent invite url to @" + str(message.author))
 
-	if message.content.lower() == "shutdown":
+	if SHUTDOWN_COMMAND_REGEX.search(message.content):
 		print("[DM] received shutdown request from @" + str(message.author))
 		success = await handlers.handle_shutdown_request(message)
 		if success:

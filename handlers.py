@@ -31,39 +31,26 @@ class Handlers:
 	def is_admin(self, user):
 		return (user.id in self.admins)
 
-	async def print_youtube_match(self, track_id, output_channel):
-		await self.client.send_typing(output_channel)
+	async def handle_imgur_gif_mp4_link(self, naked_url, message):
+		updated_link = naked_url + ".gifv"
+		await self.client.send_message(message.channel, "automatically reformatted imgur link to gifv" + "\n" + updated_link)
+		return True
+
+	async def handle_spotify_track(self, track_id, message):
+		await self.client.send_typing(message.channel)
 
 		headline = spotify_get_song_headline(track_id)
 		if headline is None:
-			await self.client.send_message(output_channel, "failed to retreieve track data from Spotify API!")
+			await self.client.send_message(message.channel, "failed to retreieve track data from Spotify API!")
 			return False
 
 		youtube_id = youtube_search_first_id(self.youtube_api_key, headline)
 		if youtube_id is None:
-			await self.client.send_message(output_channel, "failed to retreieve search data from YouTube API!")
+			await self.client.send_message(message.channel, "failed to retreieve search data from YouTube API!")
 			return False
 
-		await self.client.send_message(output_channel, "best YouTube guess for Spotify track: '" + headline + "':" + "\n" + "https://www.youtube.com/watch?v=" + youtube_id)
+		await self.client.send_message(message.channel, "best YouTube guess for Spotify track: '" + headline + "':" + "\n" + "https://www.youtube.com/watch?v=" + youtube_id)
 		return True
-
-	async def handle_imgur_gif_link(self, message):
-		updated_link = message.content.replace(".gif", ".gifv")
-		await self.client.send_message(message.channel, "automatically reformatted gif link to gifv" + "\n" + updated_link)
-		return True
-
-	async def handle_imgur_mp4_link(self, message):
-		updated_link = message.content.replace(".mp4", ".gifv")
-		await self.client.send_message(message.channel, "automatically reformatted mp4 link to gifv" + "\n" + updated_link)
-		return True
-
-	async def handle_spotify_uri(self, message):
-		track_id = message.content.split(":")[-1]
-		return await self.print_youtube_match(track_id, message.channel)
-
-	async def handle_spotify_url(self, message):
-		track_id = message.content.split("/")[-1]
-		return await self.print_youtube_match(track_id, message.channel)
 
 	async def handle_invite_request(self, message):
 		invite_url = discord.utils.oauth_url(self.client.user.id, permissions = discord.Permissions.all())
