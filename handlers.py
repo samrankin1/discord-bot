@@ -32,6 +32,8 @@ class Handlers:
 		return (user.id in self.admins)
 
 	async def print_youtube_match(self, track_id, output_channel):
+		await self.client.send_typing(output_channel)
+
 		headline = spotify_get_song_headline(track_id)
 		if headline is None:
 			await self.client.send_message(output_channel, "failed to retreieve track data from Spotify API!")
