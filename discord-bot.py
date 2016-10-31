@@ -22,14 +22,12 @@ async def handle_server_message(message):
 	if imgur_match:
 		print("[SM] found misformatted imgur link ('" + message.content + "'), reformatting to gifv")
 		naked_url = imgur_match.group(1)
-		print("imgur naked URL: " + naked_url) # debug
 		await handlers.handle_imgur_gif_mp4_link(naked_url, message)
 
 	spotify_match = SPOTIFY_TRACK_REGEX.search(message.content)
 	if spotify_match:
 		print("[SM] found spotify track URI ('" + message.content + "'), attempting to find youtube equivalent")
 		track_id = spotify_match.group(1)
-		print("spotify track ID: " + track_id)
 		await handlers.handle_spotify_track(track_id, message)
 
 async def handle_group_message(message):
